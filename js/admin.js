@@ -287,106 +287,43 @@ export function renderRoomsTable(rooms, container, onDelete, onBulkDelete) {
       </table>
     </div>`;
 
-  const selectAll = container.querySelector('#select-all-rooms');
-  const checkboxes = container.querySelectorAll('.room-checkbox');
-  const bulkBtn = container.querySelector('#bulk-delete-rooms-btn');
+document.getElementById("import-questions-btn").addEventListener("click", async () => {
 
-  const updateBulkBtn = () => {
-    const selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-    if (selectedCount > 0) {
-      bulkBtn.classList.remove('hidden');
-      bulkBtn.textContent = `حذف (${selectedCount}) غرفة`;
-    } else {
-      bulkBtn.classList.add('hidden');
-    }
-  };
+  const text = document.getElementById("bulk-questions").value;
 
-  selectAll.addEventListener('change', () => {
-    checkboxes.forEach(cb => cb.checked = selectAll.checked);
-    updateBulkBtn();
-  });
+  const lines = text
+    .split("\n")
+    .map(l => l.trim())
+    .filter(Boolean);
 
-  checkboxes.forEach(cb => {
-    cb.addEventListener('change', updateBulkBtn);
-  });
+  if(!lines.length){
+    showToast("لا توجد أسئلة", "error");
+    return;
+  }
 
-  bulkBtn.addEventListener('click', () => {
-    const selectedIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.dataset.id);
-    if (selectedIds.length) onBulkDelete(selectedIds);
-  });
+  for(const line of lines){
 
-  container.querySelectorAll('.del-room-btn').forEach(btn => {
-    btn.addEventListener('click', () => onDelete(btn.dataset.id));
-  });
-}
+    const parts = line.split("|").map(p => p.trim());
 
+    let type = parts[0];
+    let question = parts[1];
+    let options = parts.slice(2);
 
+    if(type === "multiple") type = "multiple_choice";
 
-const bulkModal = document.getElementById("bulk-modal");
+    await saveQuestion({
+      text: question,
+      type: type,
+      options: options,
+      weight: 2,
+      active: true
+    });
 
-document
-.getElementById("bulk-add-btn")
-.addEventListener("click", () => {
+  }
 
-    bulkModal.classList.add("open");
+  showToast(`تم إضافة ${lines.length} سؤال`, "success");
+
+  loadQuestions();
 
 });
 
-
-function closeBulkModal(){
-
-    bulkModal.classList.remove("open");
-
-}
-
-document
-.getElementById("close-bulk-modal")
-.addEventListener("click", closeBulkModal);
-
-document
-.getElementById("cancel-bulk-btn")
-.addEventListener("click", closeBulkModal);
-
-
-document
-.getElementById("import-questions-btn")
-.addEventListener("click", async () => {
-
-    const text = document
-    .getElementById("bulk-questions")
-    .value;
-
-    const questions = text
-        .split("\n")
-        .map(q => q.trim())
-        .filter(q => q.length > 0);
-
-
-    if(!questions.length){
-
-        showToast("لا توجد أسئلة", "error");
-        return;
-
-    }
-
-
-    for(const q of questions){
-
-        await saveQuestion({
-
-            text: q,
-            type: "text",
-            weight: 2,
-            active: true
-
-        });
-
-    }
-
-    showToast(`تم إضافة ${questions.length} سؤال`, "success");
-
-    closeBulkModal();
-
-    loadQuestions();
-
-});

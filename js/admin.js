@@ -346,3 +346,47 @@ document
 document
 .getElementById("cancel-bulk-btn")
 .addEventListener("click", closeBulkModal);
+
+
+document
+.getElementById("import-questions-btn")
+.addEventListener("click", async () => {
+
+    const text = document
+    .getElementById("bulk-questions")
+    .value;
+
+    const questions = text
+        .split("\n")
+        .map(q => q.trim())
+        .filter(q => q.length > 0);
+
+
+    if(!questions.length){
+
+        showToast("لا توجد أسئلة", "error");
+        return;
+
+    }
+
+
+    for(const q of questions){
+
+        await saveQuestion({
+
+            text: q,
+            type: "text",
+            weight: 2,
+            active: true
+
+        });
+
+    }
+
+    showToast(`تم إضافة ${questions.length} سؤال`, "success");
+
+    closeBulkModal();
+
+    loadQuestions();
+
+});

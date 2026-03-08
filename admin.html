@@ -360,6 +360,46 @@
 
         init();
     </script>
+
+
+<div id="bulk-modal" class="modal-overlay">
+
+    <div class="modal">
+
+        <div class="modal-header">
+            <h3 class="modal-title">استيراد أسئلة دفعة واحدة</h3>
+            <button class="modal-close" id="close-bulk-modal">✕</button>
+        </div>
+
+        <p class="text-muted mb-12">
+            ضع كل سؤال في سطر منفصل
+        </p>
+
+        <textarea
+            id="bulk-questions"
+            class="form-control"
+            rows="10"
+            placeholder="كيف تقيّم أهمية الصراحة؟
+كيف تتعامل مع الخلافات؟
+ما أهم شيء في العلاقة؟">
+        </textarea>
+
+        <div class="flex gap-12 mt-24">
+
+            <button id="import-questions-btn" class="btn btn-primary">
+                استيراد
+            </button>
+
+            <button id="cancel-bulk-btn" class="btn btn-outline">
+                إلغاء
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+    
 </body>
 
 </html>

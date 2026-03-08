@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الأسئلة — هارت سينك</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css?v=1.1">
+    <link rel="stylesheet" href="css/animations.css">
+</head>
+
+<body>
+    <div class="bg-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="dashboard.html" class="nav-brand">
+                <span class="heart-icon">💑</span> هارت سينك
+            </a>
+            <div class="nav-actions">
+                <img class="nav-avatar" src="" alt="" style="display:none">
+                <span class="nav-name"></span>
+                <button id="logout-btn" class="btn btn-outline btn-sm">خروج</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container" style="padding:40px 24px 80px;position:relative;z-index:1;max-width:680px">
+        <div id="loading-state" class="loading-state">
+            <div class="spinner"></div>
+            <p>جاري تحضير الأسئلة...</p>
+        </div>
+
+        <!-- Status: waiting for partner to join -->
+        <div id="waiting-partner" class="hidden card text-center" style="padding:48px">
+            <div style="font-size:4rem;margin-bottom:16px" class="animate-float">📨</div>
+            <h2 class="fw-black mb-8">غرفتك جاهزة!</h2>
+            <p class="text-muted mb-24">في انتظار انضمام شريكك عبر رابط الدعوة</p>
+            <div id="invite-display" class="invite-box mb-16">
+                <span class="invite-link" id="room-invite-link"></span>
+                <button id="copy-invite-btn" class="btn btn-sm btn-outline" style="flex-shrink:0">نسخ</button>
+            </div>
+            <p class="text-xs text-muted">سيُفعَّل بدء الأسئلة بمجرد انضمام شريكك</p>
+            <div class="waiting-hearts mt-24">
+                <span class="waiting-heart">💜</span>
+                <span class="waiting-heart">💗</span>
+                <span class="waiting-heart">💜</span>
+            </div>
+        </div>
+
+        <!-- Ready to start -->
+        <div id="ready-screen" class="hidden card text-center" style="padding:48px">
+            <div style="font-size:4rem;margin-bottom:16px">✨</div>
+            <h2 class="fw-black mb-8">كلاكما هنا!</h2>
+            <p class="text-muted mb-32">هل أنتما مستعدان لبدء رحلة التوافق؟</p>
+            <button id="start-playing-btn" class="btn btn-block"
+                style="background:var(--success); color:white; font-weight:bold; font-size:1.1rem; padding:12px 24px; box-shadow: 0 4px 15px rgba(16,185,129,0.3)">
+                🚀 ابدأ الآن!
+            </button>
+            <p class="text-xs text-muted mt-16">ستجيبان على الأسئلة في نفس الوقت</p>
+        </div>
+
+        <!-- Already completed -->
+        <div id="already-done" class="hidden card text-center" style="padding:48px">
+            <div style="font-size:4rem;margin-bottom:16px">✅</div>
+            <h2 class="fw-black mb-8">أكملت إجاباتك!</h2>
+            <p class="text-muted mb-24">في انتظار إكمال شريكك للإجابات...</p>
+            <a id="go-waiting-btn" href="#" class="btn btn-primary">انتقل إلى صفحة الانتظار</a>
+        </div>
+
+        <!-- Question Container -->
+        <div id="question-container" class="hidden"></div>
+
+        <!-- Secret Message Step -->
+        <div id="secret-message-step" class="hidden card">
+            <div style="font-size:3rem;text-align:center;margin-bottom:16px">💌</div>
+            <h2 class="fw-black text-center mb-8">رسالة سرية لشريكك</h2>
+            <p class="text-muted text-center text-sm mb-24">ستُكشف هذه الرسالة فقط بعد انتهائكما من الإجابات</p>
+            <div class="form-group">
+                <textarea id="secret-message-input" class="form-control" rows="5"
+                    placeholder="اكتب ما يعبّر عن مشاعرك... (اختياري)"></textarea>
+            </div>
+            <button id="finish-btn" class="btn btn-primary btn-block btn-lg">
+                إنهاء وانتظار النتائج 🎉
+            </button>
+            <button id="skip-secret-btn" class="btn btn-outline btn-block mt-8">
+                تخطّ (بدون رسالة سرية)
+            </button>
+        </div>
+
+        <!-- Realtime Avatars -->
+        <div id="room-presences" class="presence-container hidden"
+            style="display:flex; justify-content:center; align-items:center; gap:24px; margin-top:40px; padding-top:24px; border-top:1px solid rgba(168,85,247,0.2);">
+            <!-- Creator -->
+            <div class="presence-user" style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+                <div class="presence-avatar-wrapper" id="creator-avatar-wrap"
+                    style="position:relative; width:56px; height:56px; border-radius:50%; border:2px solid rgba(168,85,247,0.2); padding:2px;">
+                    <img id="creator-avatar-img" class="presence-avatar"
+                        src="https://ui-avatars.com/api/?name=?&background=7c3aed&color=fff&rounded=true" alt=""
+                        style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                    <div class="presence-dot" id="creator-presence-dot"
+                        style="position:absolute; bottom:0; right:0; width:14px; height:14px; background-color:#5c4b85; border:2px solid #080612; border-radius:50%; transition:all 0.3s;">
+                    </div>
+                </div>
+                <div class="presence-name" id="creator-presence-name"
+                    style="font-size:0.8rem; color:#9d86c8; font-weight:600;">المنشئ</div>
+                <div class="presence-progress" id="creator-progress"
+                    style="font-size:0.75rem; color:var(--primary-light); background:rgba(168,85,247,0.1); padding:2px 8px; border-radius:12px; display:flex; justify-content:center; min-width:60px;">
+                    <div class="spinner" style="width:12px; height:12px; border-width:2px; display:inline-block"></div>
+                </div>
+            </div>
+            <!-- Heart -->
+            <div class="presence-heart" style="font-size:1.5rem; opacity:0.6;">💖</div>
+            <!-- Partner -->
+            <div class="presence-user" style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+                <div class="presence-avatar-wrapper" id="partner-avatar-wrap"
+                    style="position:relative; width:56px; height:56px; border-radius:50%; border:2px solid rgba(168,85,247,0.2); padding:2px;">
+                    <img id="partner-avatar-img" class="presence-avatar"
+                        src="https://ui-avatars.com/api/?name=?&background=be185d&color=fff&rounded=true" alt=""
+                        style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                    <div class="presence-dot" id="partner-presence-dot"
+                        style="position:absolute; bottom:0; right:0; width:14px; height:14px; background-color:#5c4b85; border:2px solid #080612; border-radius:50%; transition:all 0.3s;">
+                    </div>
+                </div>
+                <div class="presence-name" id="partner-presence-name"
+                    style="font-size:0.8rem; color:#9d86c8; font-weight:600;">في الانتظار</div>
+                <div class="presence-progress" id="partner-progress"
+                    style="font-size:0.75rem; color:var(--primary-light); background:rgba(168,85,247,0.1); padding:2px 8px; border-radius:12px; display:flex; justify-content:center; min-width:60px;">
+                    <div class="spinner" style="width:12px; height:12px; border-width:2px; display:inline-block"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { requireAuth, renderNavUser, signOut, showToast } from './js/auth.js';
+        import { getRoom, hasUserFinished, getInviteLink, saveSecretMessage } from './js/rooms.js';
+        import { getActiveQuestions, renderQuestion } from './js/questions.js';
+        import { saveAnswer, getAnswerCount } from './js/answers.js';
+        import supabase from './js/supabase.js';
+
+        let currentUser = null;
+        let questions = [];
+        let currentIndex = 0;
+        let room = null;
+        let roomId = null;
+
+        // Presence tracking
+        let onlinePeers = new Set();
+        let leaveTimers = new Map();
+        let peerNames = new Map();
+        function updatePresenceUI() {
+            if (!room) return;
+
+            const creatorId = room.created_by;
+            const partnerId = room.partner_id;
+
+            const creatorDot = document.getElementById('creator-presence-dot');
+            const partnerDot = document.getElementById('partner-presence-dot');
+
+            // Update Creator
+            if (onlinePeers.has(creatorId)) {
+                creatorDot.classList.add('online');
+                creatorDot.style.backgroundColor = 'var(--success)';
+                creatorDot.style.boxShadow = '0 0 8px var(--success)';
+            } else {
+                creatorDot.classList.remove('online');
+                creatorDot.style.backgroundColor = '#5c4b85';
+                creatorDot.style.boxShadow = 'none';
+            }
+
+            // Update Partner
+            if (partnerId && onlinePeers.has(partnerId)) {
+                partnerDot.classList.add('online');
+                partnerDot.style.backgroundColor = 'var(--success)';
+                partnerDot.style.boxShadow = '0 0 8px var(--success)';
+            } else {
+                partnerDot.classList.remove('online');
+                partnerDot.style.backgroundColor = '#5c4b85';
+                partnerDot.style.boxShadow = 'none';
+            }
+        }
+
+        function updateProgressUI(userId, count) {
+            const total = questions.length;
+            if (!total) return;
+            const text = `السؤال ${Math.min(count + 1, total)} / ${total}`;
+
+            if (userId === room.created_by) {
+                document.getElementById('creator-progress').textContent = text;
+            } else if (room.partner_id && userId === room.partner_id) {
+                document.getElementById('partner-progress').textContent = text;
+            }
+        }
+
+        // ── Init ──────────────────────────────────────────────────
+        async function init() {
+            currentUser = await requireAuth();
+            if (!currentUser) return;
+            renderNavUser(currentUser);
+
+            const params = new URLSearchParams(location.search);
+            roomId = params.get('id') || params.get('join');
+            if (!roomId) { location.href = 'dashboard.html'; return; }
+
+            // If joining via invite link, handle join
+            const isJoining = !!params.get('join');
+            if (isJoining) {
+                const { joinRoom } = await import('./js/rooms.js');
+                try {
+                    room = await joinRoom(roomId, currentUser.id);
+                    if (!room) return;
+                } catch (err) {
+                    showToast(err.message, 'error');
+                    location.href = 'dashboard.html';
+                    return;
+                }
+                // Update URL to clean id param
+                history.replaceState({}, '', `room.html?id=${roomId}`);
+            } else {
+                room = await getRoom(roomId);
+            }
+
+            document.getElementById('loading-state').classList.add('hidden');
+
+            // Room validation
+            if (!room) { showToast('الغرفة غير موجودة', 'error'); location.href = 'dashboard.html'; return; }
+            if (room.status === 'completed') { location.href = `results.html?room=${roomId}`; return; }
+
+            // Init Avatars UI
+            const creator = room.creator || { name: 'المنشئ', avatar_url: null };
+            const partner = room.partner || { name: 'في الانتظار', avatar_url: null };
+
+            const creatorName = (creator.name && creator.name !== 'مستخدم') ? creator.name : 'المنشئ';
+            const partnerName = (partner.name && partner.name !== 'في الانتظار' && partner.name !== 'مستخدم') ? partner.name : 'في الانتظار';
+
+            document.getElementById('creator-presence-name').textContent = creatorName.split(' ')[0];
+            document.getElementById('creator-avatar-img').src = creator.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(creatorName)}&background=7c3aed&color=fff&rounded=true`;
+
+            document.getElementById('partner-presence-name').textContent = partnerName.split(' ')[0];
+            document.getElementById('partner-avatar-img').src = partner.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(partnerName)}&background=be185d&color=fff&rounded=true`;
+
+            document.getElementById('room-presences').classList.remove('hidden');
+
+            // Instantly start presence tracking as soon as avatars show
+            subscribeToPartnerPresence();
+
+            // Load questions
+            questions = await getActiveQuestions(roomId, currentUser.id, room);
+            if (!questions.length) {
+                showToast('لا توجد أسئلة نشطة بعد', 'error');
+                location.href = 'dashboard.html';
+                return;
+            }
+
+            // Fetch initial answer counts for UI
+            const creatorCount = await getAnswerCount(roomId, room.created_by);
+            updateProgressUI(room.created_by, creatorCount);
+            if (room.partner) {
+                const partnerCount = await getAnswerCount(roomId, room.partner.id);
+                updateProgressUI(room.partner.id, partnerCount);
+            }
+
+            // Waiting for partner
+            if (room.status === 'waiting' && room.created_by === currentUser.id) {
+                document.getElementById('waiting-partner').classList.remove('hidden');
+                const link = getInviteLink(roomId);
+                document.getElementById('room-invite-link').textContent = link;
+                subscribeToPartnerJoinDb();
+                return;
+            }
+
+            // Start phase logic
+            const answered = await getAnswerCount(roomId, currentUser.id);
+
+            if (room.status === 'active' && answered === 0) {
+                // Both here but questions haven't started yet
+                document.getElementById('ready-screen').classList.remove('hidden');
+                document.getElementById('start-playing-btn').addEventListener('click', () => {
+                    document.getElementById('ready-screen').classList.add('hidden');
+                    document.getElementById('question-container').classList.remove('hidden');
+                    showQuestion(0);
+                });
+                return;
+            }
+
+            if (answered < questions.length) {
+                document.getElementById('question-container').classList.remove('hidden');
+                currentIndex = answered;
+                showQuestion(currentIndex);
+            } else {
+                // Check if user already done
+                document.getElementById('already-done').classList.remove('hidden');
+                document.getElementById('go-waiting-btn').href = `waiting.html?room=${roomId}`;
+            }
+        }
+
+        // ── Show Question ─────────────────────────────────────────
+        function showQuestion(index) {
+            if (!currentUser) {
+                console.warn('[Room] showQuestion called but currentUser is null');
+                return;
+            }
+            updateProgressUI(currentUser.id, index); // Update local progress
+            if (window.updateTrackedProgress) window.updateTrackedProgress(index);
+
+            const container = document.getElementById('question-container');
+            if (index >= questions.length) {
+                // All answered → show secret message step
+                container.classList.add('hidden');
+                document.getElementById('secret-message-step').classList.remove('hidden');
+                document.getElementById('secret-message-step').classList.add('animate-scaleIn');
+                return;
+            }
+
+            const nextBtn = renderQuestion(questions[index], index, questions.length, container);
+            nextBtn.addEventListener('click', async () => {
+                // Get answer value
+                const ansInput = container.querySelector('#answer-input');
+                const value = typeof ansInput.getValue === 'function' ? ansInput.getValue() : null;
+                if (!value) { showToast('الرجاء اختيار إجابة', 'error'); return; }
+
+                nextBtn.disabled = true;
+                nextBtn.textContent = 'جاري الحفظ...';
+                try {
+                    await saveAnswer(roomId, currentUser.id, questions[index].id, value);
+                    currentIndex = index + 1;
+                    updateProgressUI(currentUser.id, currentIndex); // Update local progress after saving
+                    showQuestion(currentIndex);
+                } catch (err) {
+                    showToast('فشل الحفظ: ' + err.message, 'error');
+                    nextBtn.disabled = false;
+                    nextBtn.textContent = index === questions.length - 1 ? 'إنهاء الإجابات ✓' : 'السؤال التالي ←';
+                }
+            });
+        }
+
+        // ── Finish & Secret Message ───────────────────────────────
+        async function finishAnswering(withMessage) {
+            const btn = document.getElementById('finish-btn');
+            const skipBtn = document.getElementById('skip-secret-btn');
+            btn.disabled = true;
+            skipBtn.disabled = true;
+            btn.textContent = 'جاري الإنهاء...';
+
+            try {
+                if (withMessage) {
+                    const msg = document.getElementById('secret-message-input').value.trim();
+                    if (msg) await saveSecretMessage(roomId, currentUser.id, room.created_by, msg);
+                }
+                showToast('رائع! تم إنهاء إجاباتك 💜', 'success');
+                setTimeout(() => { location.href = `waiting.html?room=${roomId}`; }, 800);
+            } catch (err) {
+                showToast('حدث خطأ: ' + err.message, 'error');
+                btn.disabled = false;
+                skipBtn.disabled = false;
+                btn.textContent = 'إنهاء وانتظار النتائج 🎉';
+            }
+        }
+
+        document.getElementById('finish-btn')?.addEventListener('click', () => finishAnswering(true));
+        document.getElementById('skip-secret-btn')?.addEventListener('click', () => finishAnswering(false));
+        document.getElementById('copy-invite-btn')?.addEventListener('click', () => {
+            const link = document.getElementById('room-invite-link').textContent;
+            navigator.clipboard.writeText(link).then(() => showToast('تم نسخ الرابط!', 'success'));
+        });
+        document.getElementById('logout-btn').addEventListener('click', signOut);
+
+        // ── Realtime Presence & Answers: Track Join / Leave / Progress ─────────────────────
+        async function subscribeToPartnerPresence() {
+            if (!currentUser || !room) return;
+
+            onlinePeers.add(currentUser.id);
+            updatePresenceUI();
+
+            const channel = supabase.channel(`room-${roomId}-presence`, {
+                config: {
+                    presence: { key: currentUser.id },
+                },
+            });
+
+            // Listen for PRESENCE (Robust sync-based logic)
+            channel.on('presence', { event: 'sync' }, () => {
+                const state = channel.presenceState();
+                const currentKeys = Object.keys(state);
+
+                // 1. Identify New Joins
+                currentKeys.forEach(key => {
+                    const group = state[key];
+                    if (!group || group.length === 0) return;
+                    const presenceData = group[0];
+
+                    // Store/Update peer info
+                    if (presenceData.name) {
+                        peerNames.set(key, presenceData.name);
+                    }
+                    if (presenceData.progress !== undefined) {
+                        updateProgressUI(key, presenceData.progress);
+                    }
+
+                    // Handle Join Logic
+                    if (key !== currentUser.id) {
+                        if (leaveTimers.has(key)) {
+                            // Canceled leave (e.g. refresh)
+                            clearTimeout(leaveTimers.get(key));
+                            leaveTimers.delete(key);
+                        } else if (!onlinePeers.has(key)) {
+                            // Truly new join
+                            const name = presenceData.name || 'الشريك';
+                            showToast(`انضم ${name} إلى الغرفة! 🟢`, 'success');
+
+                            // Update UI name if it was a fallback
+                            if (key === room.created_by) {
+                                document.getElementById('creator-presence-name').textContent = name.split(' ')[0];
+                            } else if (key === room.partner_id) {
+                                document.getElementById('partner-presence-name').textContent = name.split(' ')[0];
+                            }
+
+                            // If we were waiting, partner joined for the first time
+                            if (room.status === 'waiting') {
+                                setTimeout(() => location.reload(), 2000);
+                            }
+                        }
+                    }
+                });
+
+                // 2. Identify Leaves
+                onlinePeers.forEach(key => {
+                    if (!currentKeys.includes(key)) {
+                        // User was online but now missing from state
+                        if (key !== currentUser.id && !leaveTimers.has(key)) {
+                            const name = peerNames.get(key) || 'الشريك';
+
+                            // Delay leave notification
+                            const timer = setTimeout(() => {
+                                showToast(`غادر ${name} الغرفة 🔴`, 'info', 5000);
+                                leaveTimers.delete(key);
+                            }, 5000);
+
+                            leaveTimers.set(key, timer);
+                        }
+                    }
+                });
+
+                // 3. Update onlinePeers set and UI
+                onlinePeers = new Set(currentKeys);
+                updatePresenceUI();
+            })
+                // Listen for ANSWERS inserted by partner (fallback)
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'answers', filter: `room_id=eq.${roomId}` }, async (payload) => {
+                    const newAnswer = payload.new;
+                    if (newAnswer.user_id !== currentUser.id) {
+                        const newCount = await getAnswerCount(roomId, newAnswer.user_id);
+                        updateProgressUI(newAnswer.user_id, newCount);
+                    }
+                })
+                .subscribe(async (subStatus) => {
+                    if (subStatus === 'SUBSCRIBED') {
+                        if (currentUser) {
+                            await channel.track({
+                                id: currentUser.id,
+                                name: currentUser.name || 'مستخدم',
+                                progress: currentIndex
+                            });
+                        }
+                    }
+                });
+
+            // Expose a way to update tracked progress
+            window.updateTrackedProgress = (index) => {
+                if (channel) {
+                    channel.track({
+                        id: currentUser.id,
+                        name: currentUser.name || 'مستخدم',
+                        progress: index
+                    }).catch(err => console.error('[Presence] track error:', err));
+                }
+            };
+        }
+
+        // Also track if the room status updates (in case first join misses presence)
+        async function subscribeToPartnerJoinDb() {
+            supabase
+                .channel(`room-${roomId}-waiting`)
+                .on('postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
+                    (payload) => {
+                        if (payload.new?.partner_id && room.status === 'waiting') {
+                            showToast('انضم الشريك! يمكنك الآن البدء 💜', 'success');
+                            setTimeout(() => location.reload(), 1500);
+                        }
+                    })
+                .subscribe();
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
